@@ -1,7 +1,8 @@
 import time
 from watchdog.observers import Observer
 from watchdog.events import FileSystemEventHandler
-from deephaven import DynamicTableWriter, Types as dht, currentTime
+from deephaven import DynamicTableWriter, Types as dht
+from deephaven.DBTimeUtils import currentTime
 
 def make_file_event_table_writer():
     columnNames = ["Timestamp", "Type", "Path"]
@@ -35,7 +36,7 @@ class Handler(FileSystemEventHandler):
 
 
 class Watcher:
-    def __init__(self, dir:str recursive:bool=False):
+    def __init__(self, dir:str, recursive:bool=False):
         self.observer = Observer()
         self.dir = dir
         self.recursive = recursive
@@ -59,5 +60,5 @@ try:
     while True:
         time.sleep(5)
 except KeyboardInterrupt:
-    print "Exiting"
+    print("Exiting")
     w.stop()
