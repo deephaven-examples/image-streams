@@ -6,11 +6,12 @@ import os
 import cv2
 import time
 
-if len(sys.argv) != 2:
-    print("Usage: <video_capture_source_number>")
+if len(sys.argv) != 3:
+    print("Usage: <video_capture_source_number> <sleep_sec>")
     sys.exit(1)
 
 video_source = int(sys.argv[1])
+sleep_sec = int(sys.argv[2])
 
 outdir = "./data/images/"
 
@@ -33,7 +34,7 @@ try:
             cv2.imwrite(f, frame)
         else:
             print("NO FRAME RETURNED")
-        time.sleep(5)
+        time.sleep(sleep_sec)
 except KeyboardInterrupt:
     print("CAMERA: SHUTDOWN")
     cv2.destroyAllWindows()
