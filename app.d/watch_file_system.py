@@ -5,8 +5,8 @@ from deephaven import DynamicTableWriter, Types as dht
 from deephaven.DBTimeUtils import currentTime
 
 def make_file_event_table_writer():
-    columnNames = ["Timestamp", "Type", "Path"]
-    columnTypes = [dht.datetime, dht.string, dht.string]
+    columnNames = ["Timestamp", "Type", "Path", "IsDir"]
+    columnTypes = [dht.datetime, dht.string, dht.string, dht.bool_]
     return DynamicTableWriter(columnNames, columnTypes)
 
 file_event_table_writer = make_file_event_table_writer()
@@ -17,22 +17,9 @@ class Handler(FileSystemEventHandler):
 
     @staticmethod
     def on_any_event(event):
-        if event.is_directory:
-            return None
-
-        # print("WATCHER: event: ", event)
-
-        # elif event.event_type == 'created':
-        #     # Take any action here when a file is first created.
-        #     print "WATCHER: Received created event - %s." % event.src_path
-
-        # elif event.event_type == 'modified':
-        #     # Taken any action here when a file is modified.
-        #     print "WATCHER: Received modified event - %s." % event.src_path
-
         now = currentTime()
         print(f"WATCHER EVENT: now={now}, event={event}")
-        file_event_table_writer.logRow(now, event.event_type, event.src_path)
+        file_event_table_writer.logRow(now, event.event_type, event.src_path, event.is_directory)
 
 
 class Watcher:
@@ -51,14 +38,17 @@ class Watcher:
         self.observer.join()
 
 
-
+print("WATCHER: STARTUP")
 
 w = Watcher(dir="/data", recursive=True)
 w.start()
 
-try:
-    while True:
-        time.sleep(5)
-except KeyboardInterrupt:
-    print("Exiting")
-    w.stop()
+# try:
+#     while True:
+#         print("WATCHER: ALIVE")
+#         time.sleep(5)
+# except KeyboardInterrupt:
+#     print("WATCHER: SHUTDOWN")
+#     w.stop()
+
+# print("WATCHER: DONE")

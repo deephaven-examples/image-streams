@@ -7,7 +7,7 @@ services:
       - '8080'
     volumes:
       - ./data:/data
-      - ../notebooks:/data/notebooks
+      # - ./notebooks:/data/notebooks
       - api-cache:/cache
     environment:
       - JAVA_TOOL_OPTIONS=-Xmx4g -Ddeephaven.console.type=python -Ddeephaven.application.dir=/app.d
@@ -18,8 +18,8 @@ services:
       - '80'
     volumes:
       - ./data:/data
-      - ../notebooks:/data/notebooks
-      - ./layouts/:/data/layouts
+      # - ./notebooks:/data/notebooks
+      # - ./layouts/:/data/layouts
       - web-tmp:/tmp
 
   grpc-proxy:
@@ -38,7 +38,7 @@ services:
       - grpc-proxy
       - grpc-api
     ports:
-      - "${PORT:-10002}:10000"
+      - "${PORT:-10000}:10000"
 
 volumes:
     web-tmp:
