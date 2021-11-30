@@ -1,54 +1,45 @@
 import os
 import numpy
 import pandas as pd
+import jpy
 import cv2
 import tensorflow as tf
 import tensorflow_hub as hub
 
-# Carregar modelos
+# Load the object detection model and labels.  For more details see:
 # https://tfhub.dev/tensorflow/efficientdet/lite2/detection/1
 # https://towardsdatascience.com/object-detection-with-tensorflow-model-and-opencv-d839f3e42849
 
 detector = hub.load("https://tfhub.dev/tensorflow/efficientdet/lite2/detection/1")
-# detector = hub.load("/object_detection/efficientdet_lite2_detection_1.tar.gz")
-# labels = pd.read_csv('/object_detection/labels.csv',sep=';',index_col='ID')['OBJECT (2017 REL.)']
-labels = pd.read_csv("https://raw.githubusercontent.com/gabrielcassimiro17/raspberry-pi-tensorflow/main/labels.csv",sep=';',index_col='ID')['OBJECT (2017 REL.)']
+labels = pd.read_csv("https://raw.githubusercontent.com/gabrielcassimiro17/raspberry-pi-tensorflow/main/labels.csv", sep=';', index_col='ID')['OBJECT (2017 REL.)']
 
-def image_file_name(file:str, image_name) -> str:
+def identified_object_file(file:str, object_name) -> str:
+    """ Gets the path to write detected object images to. """
     file_base = os.path.splitext(file)[0]
     dir, fname = os.path.split(file_base)
     dir = os.path.join(os.path.split(dir)[0], "identified_objects")
     os.makedirs(dir, exist_ok=True)
-    return os.path.join(dir, f"{fname}_{image_name}.jpg")
+    return os.path.join(dir, f"{fname}_{object_name}.jpg")
 
 
-def analyze_image(file:str, min_score:float=0.5) -> tuple:
-    #Load the image
+def analyze_image(file:str, min_score:float=0.1) -> tuple:
+    """ Load an image, identify objects in the image, save cropped images of the 
+    detected objects, and return information describing the identified objects. """
+
+    # Load the image and convert it to a tensor usable by the object detector
     img = cv2.imread(file)
-    
-    #Resize to respect the input_shape
-    # width = 512
-    # height = 512
-    # inp = cv2.resize(img, (width , height ))
-
-    inp = img
-
-    #Convert img to RGB
-    rgb = cv2.cvtColor(inp, cv2.COLOR_BGR2RGB)
-
-    #Is optional but i recommend (float convertion and convert img to tensor image)
+    rgb = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
     rgb_tensor = tf.convert_to_tensor(rgb, dtype=tf.uint8)
-
-    #Add dims to rgb_tensor
-    rgb_tensor = tf.expand_dims(rgb_tensor , 0)
+    input_tensor = tf.expand_dims(rgb_tensor , 0)
     
-    boxes, scores, classes, num_detections = detector(rgb_tensor)
+    # Perform object detection on the image
+    boxes, scores, classes, num_detections = detector(input_tensor)
     
     pred_labels = [labels[i] for i in classes.numpy().astype('int')[0]]
     pred_boxes = boxes.numpy()[0].astype('int')
     pred_scores = scores.numpy()[0]
    
-    #loop throughout the detections and place a box around it
+    # Process the identified objects.  Cropped images are saved for the identified objects.
     out_scores = []
     out_labels = []
     out_files = []
@@ -58,9 +49,8 @@ def analyze_image(file:str, min_score:float=0.5) -> tuple:
         if score < min_score:
             continue
             
-        # cropped_image = img[ymin:ymax, xmin:xmax]
-        cropped_image = inp[ymin:ymax, xmin:xmax]
-        cropped_file = image_file_name(file, count)
+        cropped_image = img[ymin:ymax, xmin:xmax]
+        cropped_file = identified_object_file(file, count)
         cv2.imwrite(cropped_file, cropped_image)
 
         out_scores.append(score)
@@ -68,6 +58,7 @@ def analyze_image(file:str, min_score:float=0.5) -> tuple:
         out_files.append(cropped_file)
         count += 1
 
+    # Pack the values into Java arrays so that the data can be ungrouped
     return (jpy.array("double", out_scores), jpy.array("java.lang.String", out_labels), jpy.array("java.lang.String", out_files))
 
 
