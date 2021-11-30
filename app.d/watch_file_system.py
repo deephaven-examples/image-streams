@@ -1,3 +1,4 @@
+import os
 import time
 from watchdog.observers.polling import PollingObserver as Observer
 from watchdog.events import FileSystemEventHandler
@@ -40,5 +41,7 @@ class Watcher:
 
 print("WATCHER: STARTUP")
 
-w = Watcher(dir="/data", recursive=True)
+image_dir = "/data/images/"
+os.makedirs(image_dir, exist_ok=True)
+w = Watcher(dir=image_dir, recursive=True)
 w.start()
