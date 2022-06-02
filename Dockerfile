@@ -1,7 +1,9 @@
 ARG TAG
-FROM ghcr.io/deephaven/grpc-api:${TAG}
+FROM ghcr.io/deephaven/server:edge
 
-RUN apt-get -y install wget ffmpeg libsm6 libxext6 && \
+RUN apt-get update
+
+RUN apt-get -y install curl wget ffmpeg libsm6 libxext6 && \
     pip install watchdog opencv-python tensorflow tensorflow_hub
 
 RUN mkdir /object_detection && \
