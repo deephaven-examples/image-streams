@@ -67,13 +67,13 @@ def analyze_image(file:str, min_score:float=0.1) -> tuple:
 get_contents = lambda contents, i: contents[i]
 
 detected_images = file_events \
-    .where("Type = `created`", "!IsDir") \
-    .view("Timestamp", "SourceImage = Path") \
-    .update(
+    .where(filters=["Type = `created`", "!IsDir"]) \
+    .view(["Timestamp", "SourceImage = Path"]) \
+    .update([
         "Contents = analyze_image(SourceImage)", 
         "Score = (double[]) get_contents(Contents,0)", 
         "Label = (String[]) get_contents(Contents,1)", 
         "ObjectImage = (String[]) get_contents(Contents,2)"
-        ) \
-    .dropColumns("Contents") \
+        ]) \
+    .drop_columns(["Contents"]) \
     .ungroup()

@@ -2,16 +2,17 @@ import os
 import time
 from watchdog.observers.polling import PollingObserver as Observer
 from watchdog.events import FileSystemEventHandler
-from deephaven import DynamicTableWriter, Types as dht
-from deephaven.DBTimeUtils import currentTime
+from deephaven import DynamicTableWriter
+import deephaven.dtypes as dht
+
+from deephaven.time import now as currentTime
 
 def make_file_event_table_writer():
-    columnNames = ["Timestamp", "Type", "Path", "IsDir"]
-    columnTypes = [dht.datetime, dht.string, dht.string, dht.bool_]
-    return DynamicTableWriter(columnNames, columnTypes)
+    columnT={"Timestamp":dht.DateTime, "Type":dht.string, "Path":dht.string, "IsDir":dht.bool_}
+    return DynamicTableWriter(columnT)
 
 file_event_table_writer = make_file_event_table_writer()
-file_events = file_event_table_writer.getTable()
+file_events = file_event_table_writer.table
 
 
 class Handler(FileSystemEventHandler):
@@ -20,7 +21,7 @@ class Handler(FileSystemEventHandler):
     def on_any_event(event):
         now = currentTime()
         print(f"WATCHER EVENT: now={now}, event={event}")
-        file_event_table_writer.logRow(now, event.event_type, event.src_path, event.is_directory)
+        file_event_table_writer.write_row(now, event.event_type, event.src_path, event.is_directory)
 
 
 class Watcher:
